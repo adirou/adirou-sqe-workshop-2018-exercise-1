@@ -1,0 +1,8 @@
+node_modules
+.idea
+dist
+dist-tests
+.nyc_output
+coverage
+lint
+reports
