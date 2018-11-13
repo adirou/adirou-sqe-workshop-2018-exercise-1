@@ -5,9 +5,9 @@ const parseCode = (codeToParse) => {
 };
 
 const parseCodeWithLoc = (codeToParse) => esprima.parseScript(codeToParse, {loc: true});
-  
+
 const buildTableOfElement = (codeToParse) =>{
-    let tableData = buildModelGeneral(parseCodeWithLoc(codeToParse));  
+    const tableData = buildModelGeneral(parseCodeWithLoc(codeToParse));  
     return sortTable(tableData);
 };
 
@@ -15,21 +15,35 @@ const sortTable = (tableData) => tableData.sort((a,b)=>a.line<b.line);
 
 const buildModelGeneral = (ast) =>
     !ast? []:
-    ast.type==='Program' || ast.type==='BlockStatement'? buildModelProgram(ast):
+        ast.type==='Program' || ast.type==='BlockStatement'? buildModelProgram(ast):
+            ast.type==='Literal'? buildModelLiteral(ast):
+                buildDeclrations(ast);
+
+const buildDeclrations = (ast) =>
     ast.type==='VariableDeclaration'? buildModelVariableDeclaration(ast):
-    ast.type==='VariableDeclarator'? buildModelVariableDeclarator(ast):
-    ast.type==='FunctionDeclaration'? buildModelFunctionDeclaration(ast):
-    ast.type==='Literal'? buildModelLiteral(ast):
-    ast.type==='IfStatement'? buildModelIfStatement(ast):
+        ast.type==='VariableDeclarator'? buildModelVariableDeclarator(ast):
+            ast.type==='FunctionDeclaration'? buildModelFunctionDeclaration(ast):
+                ast.type==='Identifier'?buildModelIdentifier(ast):
+                    buildStatements(ast);
+
+    
+const buildStatements = (ast)=>
     ast.type==='ExpressionStatement'? buildModelExpressionStatement(ast):
-    ast.type==='BinaryExpression'? buildModelBinaryExpression(ast):
-    ast.type==='AssignmentExpression'? buildModelAssignmentExpression(ast):
-    ast.type==='WhileStatement'? buildModelWhileStatement(ast):
-    ast.type==='ForStatement'? buildModelForStatement(ast):
-    ast.type==='ReturnStatement'? buildModelReturnStatement(ast):
+        ast.type==='ForStatement'? buildModelForStatement(ast):
+            ast.type==='ReturnStatement'? buildModelReturnStatement(ast):
+                ast.type==='WhileStatement'? buildModelWhileStatement(ast):
+                    buildExpressions (ast);
+
+const buildExpressions = (ast) =>
     ast.type==='MemberExpression'? buildModelMemberExpression(ast):
-    ast.type==='UnaryExpression'? buildModelUnaryExpression(ast):
-    ast.type==='Identifier'?buildModelIdentifier(ast):[];
+        ast.type==='UnaryExpression'? buildModelUnaryExpression(ast):
+            ast.type==='BinaryExpression'? buildModelBinaryExpression(ast):
+                ast.type==='AssignmentExpression'? buildModelAssignmentExpression(ast):
+                    buildOtherExpressions(ast);
+
+const buildOtherExpressions = (ast) =>
+    ast.type==='IfStatement'? buildModelIfStatement(ast):[];
+
 
 const buildModelProgram = (ast) =>{
     let bodyNodes =ast.body.reduce((curr,next)=>[...curr,...buildModelGeneral(next)],[]);
@@ -111,4 +125,4 @@ const buildModelIdentifier = (ast) => [{line: ast.loc.start.line ,type: ast.type
 const buildModelLiteral= (ast) => [{line: ast.loc.start.line ,type: ast.type, name:'', value: ast.value}];
 
 
-export {parseCode, parseCodeWithLoc, buildTableOfElement,buildModelGeneral};
+export {parseCode, parseCodeWithLoc,buildTableOfElement,buildModelGeneral};
