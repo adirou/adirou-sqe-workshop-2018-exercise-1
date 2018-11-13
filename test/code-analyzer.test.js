@@ -28,6 +28,10 @@ describe('buildModels',()=>{
         let ast = null;
         assert.equal(JSON.stringify(buildModelGeneral(ast)),JSON.stringify([]));
     });
+    it('buildModelGeneral with not declared ast node',()=>{
+        let ast = {type:'sadsad'};
+        assert.equal(JSON.stringify(buildModelGeneral(ast)),JSON.stringify([]));
+    });
     it('buildModelGeneral with program node',()=>{
         let ast ={type:'Program',body:[],loc:{start:{line:1}}};
         assertBuildModel(ast,'Program');
