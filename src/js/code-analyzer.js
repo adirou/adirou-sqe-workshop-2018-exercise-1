@@ -150,4 +150,4 @@ const buildStringIdentifier = (ast) => `${ast.name}`;
 const buildStringLiteral= (ast) => `${ast.value}`;
 
 
-export {parseCode,sortTable,reducer, reducer2, parseCodeWithLoc,buildTableOfElement,buildModelGeneral,buildStringExpressions,buildStatements};
+export {parseCode,sortTable,reducer, parseCodeWithLoc,buildTableOfElement,buildModelGeneral,buildStringExpressions,buildStatements};
