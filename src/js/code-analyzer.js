@@ -11,118 +11,143 @@ const buildTableOfElement = (codeToParse) =>{
     return sortTable(tableData);
 };
 
-const sortTable = (tableData) => tableData.sort((a,b)=>a.line<b.line);
+const sortTable = (tableData) => tableData.sort((a,b) => a.line > b.line);
 
+const statements = ['Program','BlockStatement','VariableDeclaration','VariableDeclarator',
+    'FunctionDeclaration','IfStatement','ReturnStatement','WhileStatement',
+    'ExpressionStatement','AssignmentExpression','ForStatement'];
+
+const expressions = ['MemberExpression','UnaryExpression','BinaryExpression','updateExpression',
+    'Identifier','Literal'];
 const buildModelGeneral = (ast) =>
-    !ast? []:
-        ast.type==='Program' || ast.type==='BlockStatement'? buildModelProgram(ast):
-            ast.type==='Literal'? buildModelLiteral(ast):
-                buildDeclrations(ast);
+    !ast?[]:
+        statements.includes(ast.type)? buildStatements(ast):
+            expressions.includes(ast.type)? buildStringExpressions(ast):[];
 
-const buildDeclrations = (ast) =>
-    ast.type==='VariableDeclaration'? buildModelVariableDeclaration(ast):
-        ast.type==='VariableDeclarator'? buildModelVariableDeclarator(ast):
-            ast.type==='FunctionDeclaration'? buildModelFunctionDeclaration(ast):
-                ast.type==='Identifier'?buildModelIdentifier(ast):
-                    buildStatements(ast);
 
-    
-const buildStatements = (ast)=>
-    ast.type==='ExpressionStatement'? buildModelExpressionStatement(ast):
-        ast.type==='ForStatement'? buildModelForStatement(ast):
+const buildStatements = (ast) =>
+    ast.type==='Program' || ast.type==='BlockStatement'? buildModelProgram(ast):
+        ast.type==='VariableDeclaration'? buildModelVariableDeclaration(ast):
+            ast.type==='VariableDeclarator'? buildModelVariableDeclarator(ast):
+                buildStatements2(ast);
+
+const buildStatements2 = (ast)=>
+    ast.type==='FunctionDeclaration'? buildModelFunctionDeclaration(ast):
+        ast.type==='IfStatement'? buildModelIfStatement(ast):
             ast.type==='ReturnStatement'? buildModelReturnStatement(ast):
-                ast.type==='WhileStatement'? buildModelWhileStatement(ast):
-                    buildExpressions (ast);
+                buildStatements3(ast);
 
-const buildExpressions = (ast) =>
-    ast.type==='MemberExpression'? buildModelMemberExpression(ast):
-        ast.type==='UnaryExpression'? buildModelUnaryExpression(ast):
-            ast.type==='BinaryExpression'? buildModelBinaryExpression(ast):
-                ast.type==='AssignmentExpression'? buildModelAssignmentExpression(ast):
-                    buildOtherExpressions(ast);
+const buildStatements3 = (ast)=>
+    ast.type==='WhileStatement'? buildModelWhileStatement(ast):
+        ast.type==='ExpressionStatement'? buildModelExpressionStatement(ast):
+            ast.type==='ForStatement'? buildModelForStatement(ast):
+                ast.type==='AssignmentExpression'? buildModelAssignmentExpression(ast):[];
 
-const buildOtherExpressions = (ast) =>
-    ast.type==='IfStatement'? buildModelIfStatement(ast):[];
+const buildStringExpressions = (ast) =>
+    !ast?'':
+        ast.type==='MemberExpression'? buildStringMemberExpression(ast):
+            ast.type==='UnaryExpression'? buildStringUnaryExpression(ast):
+                ast.type==='BinaryExpression'? buildStringBinaryExpression(ast):
+                    buildStringExpressions2(ast);
+
+const buildStringExpressions2 = (ast)=>
+    ast.type==='UpdateExpression'?buildStringUpdateExpression(ast):
+        ast.type==='AssignmentExpression'? buildStringBinaryExpression(ast,true):
+            ast.type==='Literal'? buildStringLiteral(ast):
+                buildStringExpression3(ast);
+
+const buildStringExpression3 =(ast)=>
+    ast.type==='Identifier'?buildStringIdentifier(ast):
+        ast.type==='VariableDeclaration'? buildModelVariableDeclaration(ast,true):
+            ast.type==='VariableDeclarator'? buildModelVariableDeclarator(ast,true):'';
 
 
-const buildModelProgram = (ast) =>{
-    let bodyNodes =ast.body.reduce((curr,next)=>[...curr,...buildModelGeneral(next)],[]);
-    return [{line: ast.loc.start.line ,type: ast.type, name:'', value: ''} ,...bodyNodes];
+
+const buildModelProgram = (ast) =>ast.body.reduce((curr,next)=>[...curr,...buildModelGeneral(next)],[]);
+
+const reducer= (curr,next)=>[...curr,...buildModelGeneral(next)];
+
+const buildModelVariableDeclaration= (ast,toString=false) =>{
+    return toString?ast.declarations.reduce((curr,next)=>`${curr} ${buildStringExpressions(next,true)}`,`${ast.kind}`):
+        ast.declarations.reduce(reducer,[]);
 };
 
-const buildModelVariableDeclaration= (ast) =>{
-    let declrator =ast.declarations.reduce((curr,next)=>[...curr,...buildModelGeneral(next)],[]);
-    return [{line: ast.loc.start.line ,type: ast.type, name:'', value: ''} ,...declrator];
-};
-
-const buildModelVariableDeclarator= (ast) =>{
-    let init = buildModelGeneral(ast.init);
-    return [{line: ast.loc.start.line ,type: ast.type, name:ast.id.name, value: ''} ,...init];
+const buildModelVariableDeclarator= (ast,toString=false) =>{
+    let init = buildStringExpressions(ast.init);
+    if(toString)
+        return `${ast.id.name} = ${init}`;
+    return [{line: ast.loc.start.line ,type: ast.type, name:ast.id.name, value: init,condition:''}];
 };
 
 const buildModelIfStatement= (ast) => {
-    let test = buildModelGeneral(ast.test);
+    let test = buildStringExpressions(ast.test);
     let consequent = buildModelGeneral(ast.consequent);
-    let alternative = buildModelGeneral(ast.alternative);
-    return [{line: ast.loc.start.line ,type: ast.type, name:'', value: ''} ,...test,...consequent,...alternative];
+    let alternate = buildModelGeneral(ast.alternate);
+    return [{line: ast.loc.start.line ,type: ast.type, name:'', value: '',condition:test} ,...consequent,...alternate];
 };
 
-const buildModelExpressionStatement= (ast) => {
-    let expression = buildModelGeneral(ast.expression);
-    return [{line: ast.loc.start.line ,type: ast.type, name:'', value: ''} ,...expression];
-};
+const buildModelExpressionStatement= (ast) => buildModelGeneral(ast.expression);
 
-const buildModelBinaryExpression= (ast) => {
-    let left = buildModelGeneral(ast.left);
-    let right = buildModelGeneral(ast.right);
-    return [{line: ast.loc.start.line ,type: ast.type, name:ast.operator, value: ''} ,...left,...right];
-};
 
 const buildModelAssignmentExpression= (ast) => {
-    let left = buildModelGeneral(ast.left);
-    let right = buildModelGeneral(ast.right);
-    return [{line: ast.loc.start.line ,type: ast.type, name:ast.operator, value: ''} ,...left,...right];
+    let left = buildStringExpressions(ast.left);
+    let right = buildStringExpressions(ast.right);
+    return [{line: ast.loc.start.line ,type: ast.type, name:left, value: right,condition:''}];
 };
 
-const buildModelFunctionDeclaration = (ast) =>{
-    let params = ast.params.reduce((curr,next)=>[...curr,...buildModelGeneral(next)],[]);
-    let body = buildModelGeneral(ast.body); 
-    return [{line: ast.loc.start.line ,type: ast.type, name:ast.id.name, value: ''} ,...params,...body];
+
+const buildModelFunctionDeclaration =(ast) => {
+    let params = [];
+    for(let i=0;i<ast.params.length;i++)
+        params = [...params,{line:ast.loc.start.line, type:'VariableDeclration', name:ast.params[i].name,value:'',condition:''}];
+    let body = buildModelGeneral(ast.body);
+    return [{line: ast.loc.start.line ,type: ast.type, name:ast.id.name, value: '',condition:''} ,...params,...body];
 };
 
 const buildModelWhileStatement = (ast) =>{
-    let test = buildModelGeneral(ast.test); 
-    let body = buildModelGeneral(ast.body); 
-    return [{line: ast.loc.start.line ,type: ast.type, name:'', value: ''} ,...test,...body];
+    let test = buildModelGeneral(ast.test);
+    let body = buildModelGeneral(ast.body);
+    return [{line: ast.loc.start.line ,type: ast.type, name:'', value: '',condition:test} ,...body];
 };
 
 const buildModelForStatement = (ast) =>{
-    let init = buildModelGeneral(ast.init); 
-    let test = buildModelGeneral(ast.test); 
-    let update = buildModelGeneral(ast.update); 
+    let init = buildStringExpressions(ast.init); 
+    let test = buildStringExpressions(ast.test); 
+    let update = buildStringExpressions(ast.update); 
     let body = buildModelGeneral(ast.body); 
-    return [{line: ast.loc.start.line ,type: ast.type, name:'', value: ''} ,...init,...test,...update,...body];
-};
-
-const buildModelMemberExpression = (ast) =>{
-    let object = buildModelGeneral(ast.object); 
-    let property = buildModelGeneral(ast.property); 
-    return [{line: ast.loc.start.line ,type: ast.type, name:'', value: ''} ,...object,...property];
+    return [{line: ast.loc.start.line ,type: ast.type, name:'', value: '',condition:`${init}; ${test}; ${update}`},...body];
 };
 
 const buildModelReturnStatement = (ast) =>{
-    let argument = buildModelGeneral(ast.argument); 
-    return [{line: ast.loc.start.line ,type: ast.type, name:'', value: ''} ,...argument];
+    let argument = buildStringExpressions(ast.argument); 
+    return [{line: ast.loc.start.line ,type: ast.type, name:'', value: argument,condition:''}];
 };
 
-const buildModelUnaryExpression = (ast) =>{
-    let argument = buildModelGeneral(ast.argument);  
-    return [{line: ast.loc.start.line ,type: ast.type, name:ast.operator, value: ''} ,...argument];
+const buildStringMemberExpression = (ast) =>{
+    let object = buildStringExpressions(ast.object); 
+    let property = buildStringExpressions(ast.property); 
+    return `${object}[${property}]`;
 };
 
-const buildModelIdentifier = (ast) => [{line: ast.loc.start.line ,type: ast.type, name:ast.name, value:''}];
+const buildStringBinaryExpression= (ast,isAssignment=false) => {
+    let left = buildStringExpressions(ast.left);
+    let right = buildStringExpressions(ast.right);
+    return `${left} ${isAssignment?'=':ast.operator} ${right}`;
+};
 
-const buildModelLiteral= (ast) => [{line: ast.loc.start.line ,type: ast.type, name:'', value: ast.value}];
 
 
-export {parseCode, parseCodeWithLoc,buildTableOfElement,buildModelGeneral};
+const buildStringUnaryExpression = (ast) =>{
+    let argument = buildStringExpressions(ast.argument);  
+    return `${ast.operator}${argument}`;
+};
+const buildStringUpdateExpression = (ast) => {
+    let argument = buildStringExpressions(ast.argument);  
+    return `${argument}${ast.operator}`;
+};
+const buildStringIdentifier = (ast) => `${ast.name}`;
+
+const buildStringLiteral= (ast) => `${ast.value}`;
+
+
+export {parseCode,sortTable,reducer, reducer2, parseCodeWithLoc,buildTableOfElement,buildModelGeneral,buildStringExpressions,buildStatements};

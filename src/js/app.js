@@ -15,5 +15,5 @@ $(document).ready(function () {
     });
 });
 
-const generateRow = (nodeProp) => `<tr> <td>${nodeProp.line}</td>  <td>${nodeProp.type}</td>  <td>${nodeProp.name}</td>  <td>${nodeProp.value}</td> </tr>`;
+const generateRow = (nodeProp) => `<tr> <td>${nodeProp.line}</td>  <td>${nodeProp.type}</td>  <td>${nodeProp.name}</td> <td>${nodeProp.condition}</td> <td>${nodeProp.value}</td> </tr>`;
         
