@@ -11,7 +11,7 @@ const buildTableOfElement = (codeToParse) =>{
     return sortTable(tableData);
 };
 
-const sortTable = (tableData) => tableData.sort((a,b) => a.line > b.line);
+const sortTable = (tableData) => tableData.sort((a,b) => a.line - b.line);
 
 const statements = ['Program','BlockStatement','VariableDeclaration','VariableDeclarator',
     'FunctionDeclaration','IfStatement','ReturnStatement','WhileStatement',

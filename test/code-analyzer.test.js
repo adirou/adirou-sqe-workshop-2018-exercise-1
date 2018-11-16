@@ -33,9 +33,6 @@ describe('utils table', () => {
         let table = reducer([],ast);
         assert.equal(JSON.stringify([]),JSON.stringify([]));
     });
-    it('test reducer2', () => {
-        
-    });
 });
 describe('buildModels',()=>{
     it('buildModelGeneral with null ast',()=>{
