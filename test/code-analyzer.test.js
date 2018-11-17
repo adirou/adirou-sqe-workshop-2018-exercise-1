@@ -91,6 +91,12 @@ describe('buildModels',()=>{
         let ast = {type:'IfStatement', test:{type:'Identifier',name:'x'}, consequent:null, alternate:null,loc:{start:{line:1}}};
         assertBuildModel(ast,'IfStatement',1,'','','x');
     });
+    it('buildModelGeneral with IfStatement node',()=>{
+        let ast = {type:'IfStatement', test:{type:'Identifier',name:'x'}, consequent:null, alternate:{type:'IfStatement', test:{type:'Identifier',name:'x'}, consequent:null, alternate:null,loc:{start:{line:1}}},loc:{start:{line:1}}};
+        let table=`[{"line":1,"type":"IfStatement","name":"","value":"","condition":"x"},{"line":1,"type":"elseIfStatement","name":"","value":"","condition":"x"}]`
+        assert.equal(JSON.stringify(buildModelGeneral(ast)),table);
+    });
+
 
         
     it('buildModelGeneral with ExpressionStatement node',()=>{

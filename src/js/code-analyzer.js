@@ -33,7 +33,7 @@ const buildStatements = (ast) =>
 
 const buildStatements2 = (ast)=>
     ast.type==='FunctionDeclaration'? buildModelFunctionDeclaration(ast):
-        ast.type==='IfStatement'? buildModelIfStatement(ast):
+        ast.type==='IfStatement'? buildModelIfStatement(ast,false):
             ast.type==='ReturnStatement'? buildModelReturnStatement(ast):
                 buildStatements3(ast);
 
@@ -79,11 +79,11 @@ const buildModelVariableDeclarator= (ast,toString=false) =>{
     return [{line: ast.loc.start.line ,type: ast.type, name:ast.id.name, value: init,condition:''}];
 };
 
-const buildModelIfStatement= (ast) => {
+const buildModelIfStatement= (ast,afterElse) => {
     let test = buildStringExpressions(ast.test);
     let consequent = buildModelGeneral(ast.consequent);
-    let alternate = buildModelGeneral(ast.alternate);
-    return [{line: ast.loc.start.line ,type: ast.type, name:'', value: '',condition:test} ,...consequent,...alternate];
+    let alternate = (ast.alternate && ast.alternate.type)==='IfStatement'?buildModelIfStatement(ast.alternate,true): buildModelGeneral(ast.alternate);
+    return [{line: ast.loc.start.line ,type:afterElse?'elseIfStatement':ast.type, name:'', value: '',condition:test} ,...consequent,...alternate];
 };
 
 const buildModelExpressionStatement= (ast) => buildModelGeneral(ast.expression);
@@ -148,6 +148,5 @@ const buildStringUpdateExpression = (ast) => {
 const buildStringIdentifier = (ast) => `${ast.name}`;
 
 const buildStringLiteral= (ast) => `${ast.value}`;
-
 
 export {parseCode,sortTable,reducer, parseCodeWithLoc,buildTableOfElement,buildModelGeneral,buildStringExpressions,buildStatements};
